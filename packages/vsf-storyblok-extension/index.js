@@ -69,6 +69,13 @@ module.exports = ({ config, db }) => {
     console.log('📖 : Stories not synced!') // eslint-disable-line no-console
   })
 
+  function loadStories(params) {
+    return storyblokClient.get('cdn/stories', Object.assign({
+      per_page: 100,
+      resolve_links: 'url'
+    }, params))
+  }
+
   api.get('/story/', (req, res) => {
     getStory(res, 'home')
   })
@@ -97,5 +104,14 @@ module.exports = ({ config, db }) => {
     }, 403)
   })
 
+  api.get('/stories', async (req, res) => {
+    const path = req.params.story + req.params[0]
+    let response = loadStories(req.query)
+    let dataJson = await response
+    apiStatus(res, {
+      stories: dataJson.data.stories,
+    })
+  })
+  
   return api
 }
