@@ -11,7 +11,10 @@ function mapStoryToBulkAction ({ index, story: { id } }) {
 function indexStories ({ db, index, stories = [] }) {
   const bulkOps = stories.reduce((accumulator, story) => {
     accumulator.push(mapStoryToBulkAction({ index, story }))
-    accumulator.push(story)
+    accumulator.push({
+      ...story,
+      content: JSON.stringify(story.content)
+    })
     return accumulator
   }, [])
 
@@ -27,7 +30,12 @@ async function syncStories ({ db, index, page = 1, perPage = 100, storyblokClien
     resolve_links: 'url'
   })
 
-  const promise = indexStories({ db, index, stories })
+  const newStories = stories.map(story => ({
+    ...story,
+    full_slug: story.full_slug.replace(/^\/|\/$/g, '')
+  }))
+
+  const promise = indexStories({ db, index, stories: newStories })
 
   const lastPage = Math.ceil((total / perPage))
 

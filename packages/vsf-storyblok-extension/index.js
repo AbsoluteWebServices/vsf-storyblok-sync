@@ -5,6 +5,10 @@ import { apiStatus } from '../../../lib/util'
 import { hook } from './hook'
 import { syncStories } from './sync-stories'
 
+const log = (string) => {
+  console.log('📖 : ' + string) // eslint-disable-line no-console
+}
+
 module.exports = ({ config, db }) => {
   if (!config.storyblok || !config.storyblok.previewToken) {
     throw new Error('🧱 : config.storyblok.previewToken not found')
@@ -40,8 +44,12 @@ module.exports = ({ config, db }) => {
   }).then((response) => {
     const { hits } = response
     if (hits.total > 0) {
+      let story = hits.hits[0]._source
+      if (typeof story.content === 'string') {
+        story.content = JSON.parse(story.content)
+      }
       apiStatus(res, {
-        story: hits.hits[0]._source
+        story
       })
     } else {
       apiStatus(res, {
@@ -58,15 +66,27 @@ module.exports = ({ config, db }) => {
     requestTimeout: 30000
   }).then(async (response) => {
     try {
-      console.log('📖 : Syncing published stories!') // eslint-disable-line no-console
+      log('Syncing published stories!')
       await db.indices.delete({ ignore_unavailable: true, index })
+      await db.indices.create({
+        index,
+        body: {
+          index: {
+            mapping: {
+              total_fields: {
+                limit: config.storyblok.fieldLimit || 1000
+              }
+            }
+          }
+        }
+      })
       await syncStories({ db, index, perPage: config.storyblok.perPage, storyblokClient })
-      console.log('📖 : Stories synced!') // eslint-disable-line no-console
+      log('Stories synced!')
     } catch (error) {
-      console.log('📖 : Stories not synced!') // eslint-disable-line no-console
+      log('Stories not synced!')
     }
   }).catch(() => {
-    console.log('📖 : Stories not synced!') // eslint-disable-line no-console
+    log('Stories not synced!')
   })
 
   function loadStories(params) {
@@ -81,7 +101,10 @@ module.exports = ({ config, db }) => {
   })
 
   api.get('/story/:story*', (req, res) => {
-    const path = req.params.story + req.params[0]
+    let path = req.params.story + req.params[0]
+    if (config.storeViews[path]) {
+      path += '/home'
+    }
     getStory(res, path)
   })
 

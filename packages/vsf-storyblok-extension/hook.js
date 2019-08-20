@@ -1,12 +1,16 @@
 import { json, Router } from 'express'
 import { apiStatus } from '../../../lib/util'
 
-const transformStory = (index) => ({ id, ...story } = {}) => ({
-  index: index,
-  type: 'story', // XXX: Change to _doc once VSF supports Elasticsearch 6
-  id: id,
-  body: story
-})
+const transformStory = (index) => ({ id, ...story } = {}) => {
+  story.content = JSON.stringify(story.content)
+  story.full_slug = story.full_slug.replace(/^\/|\/$/g, '')
+  return {
+    index: index,
+    type: 'story', // XXX: Change to _doc once VSF supports Elasticsearch 6
+    id: id,
+    body: story
+  }
+}
 
 function hook ({ config, db, index, storyblokClient }) {
   if (!config.storyblok || !config.storyblok.hookSecret) {
