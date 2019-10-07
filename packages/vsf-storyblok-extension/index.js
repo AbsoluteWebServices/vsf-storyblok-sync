@@ -22,7 +22,7 @@ module.exports = ({ config, db }) => {
   }
 
   const storyblokClient = new StoryblokClient(storyblokClientConfig)
-  const index = 'storyblok_stories'
+  const index = config.storyblok.indexName ? config.storyblok.indexName : 'storyblok_stories'
   const api = Router()
 
   api.use(hook({ config, db, index, storyblokClient }))
