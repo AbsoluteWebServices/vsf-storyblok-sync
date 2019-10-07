@@ -55,6 +55,17 @@ function hook ({ config, db, index, storyblokClient }) {
         log(`Unpublished ${id}`)
       }
 
+      if (config.storyblok.cacheTag) {
+        request(config.server.invalidateCacheForwardUrl + config.storyblok.cacheTag + '&forwardedFrom=vs', {}, (err, res, body) => {
+          if (err) { console.error(err); }
+          try {
+            if (body && JSON.parse(body).code !== 200) console.log(body);
+          } catch (e) {
+            console.error('Invalid Cache Invalidation response format', e)
+          }
+        })
+      }
+
       return apiStatus(res)
     } catch (error) {
       console.log('Failed fetching story', error)
