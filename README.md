@@ -33,6 +33,28 @@ export const registerModules: VueStorefrontModule[] = [
 }
 ```
 
+### Multistore Config
+
+```
+
+"storyblok": {
+  // ... base config ^
+  "multistore": true,
+  "config": [
+    {
+      "indexName": "storyblok_stories_website_0",
+      "previewToken": "...",
+      "hookSecret": "..."
+    },
+    {
+      "indexName": "storyblok_stories_website_1",
+      "previewToken": "...",
+      "hookSecret": "..."
+    }
+  ]
+},
+```
+
 ### Usage
 
 See the `/theme` folder for a demo implementation.
