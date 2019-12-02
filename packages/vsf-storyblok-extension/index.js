@@ -14,7 +14,7 @@ module.exports = ({ config, db }) => {
     throw new Error('🧱 : config.storyblok.previewToken not found')
   }
   if(!config.extensions.storyblok) {
-    console.log('Storyblok Adjusted: In Order to use revised storyblok you must add config under config.extensions.storyblok. Check README for format');
+    throw new Error('Storyblok Adjusted: In Order to use revised storyblok you must add config under config.extensions.storyblok. Check README for format');
   } else if (config.extensions.storyblok.multistore && config.extensions.storyblok.config.length) {
     // sync from all!
     console.log('Multistore config!')
