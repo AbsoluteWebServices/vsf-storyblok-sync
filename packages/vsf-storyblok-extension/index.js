@@ -20,7 +20,6 @@ module.exports = ({ config, db }) => {
     console.log('Multistore config!')
     const api = Router()
     config.extensions.storyblok.config.map(stConfig => {
-      console.log(stConfig)
       const storyblokClientConfig = {
         accessToken: stConfig.previewToken,
         cache: {
