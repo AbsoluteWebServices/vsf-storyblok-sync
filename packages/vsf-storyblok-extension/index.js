@@ -10,7 +10,7 @@ const log = (string) => {
 }
 
 module.exports = ({ config, db }) => {
-  db = db.getElasticClient()
+  const esClient = db.getElasticClient()
   if (!config.storyblok || !config.storyblok.previewToken) {
     throw new Error('🧱 : config.storyblok.previewToken not found')
   }
@@ -70,13 +70,11 @@ module.exports = ({ config, db }) => {
         }, 500)
       })
 
-      db.ping({
-        requestTimeout: 30000
-      }).then(async (response) => {
+      esClient.ping().then(async (response) => {
         try {
           log('Syncing published stories!')
-          await db.indices.delete({ ignore_unavailable: true, index })
-          await db.indices.create({
+          await esClient.indices.delete({ ignore_unavailable: true, index })
+          await esClient.indices.create({
             index,
             body: {
               index: {
@@ -88,7 +86,7 @@ module.exports = ({ config, db }) => {
               }
             }
           })
-          await syncStories({ db, index, perPage: 100, storyblokClient })
+          await syncStories({ esClient, index, perPage: 100, storyblokClient })
           log('Stories synced for index ' + index + '!')
         } catch (error) {
           log('Stories not synced! ' + error)
@@ -148,7 +146,7 @@ module.exports = ({ config, db }) => {
 
   api.use(hook({ config, db, index, storyblokClient }))
 
-  const getStory = (res, path) => db.search({
+  const getStory = (res, path) => esClient.search({
     index,
     type: 'story',
     body: {
@@ -183,13 +181,13 @@ module.exports = ({ config, db }) => {
     }, 500)
   })
 
-  db.ping({
+  esClient.ping({
     requestTimeout: 30000
   }).then(async (response) => {
     try {
       log('Syncing published stories!')
-      await db.indices.delete({ ignore_unavailable: true, index })
-      await db.indices.create({
+      await esClient.indices.delete({ ignore_unavailable: true, index })
+      await esClient.indices.create({
         index,
         body: {
           index: {
@@ -201,7 +199,7 @@ module.exports = ({ config, db }) => {
           }
         }
       })
-      await syncStories({ db, index, perPage: config.storyblok.perPage, storyblokClient })
+      await syncStories({ esClient, index, perPage: config.storyblok.perPage, storyblokClient })
       log('Stories synced!')
     } catch (error) {
       log('Stories not synced!')

@@ -8,7 +8,7 @@ function mapStoryToBulkAction ({ index, story: { id } }) {
   }
 }
 
-function indexStories ({ db, index, stories = [] }) {
+function indexStories ({ esClient, index, stories = [] }) {
   const bulkOps = stories.reduce((accumulator, story) => {
     accumulator.push(mapStoryToBulkAction({ index, story }))
     accumulator.push({
@@ -18,12 +18,12 @@ function indexStories ({ db, index, stories = [] }) {
     return accumulator
   }, [])
 
-  return db.bulk({
+  return esClient.bulk({
     body: bulkOps
   })
 }
 
-async function syncStories ({ db, index, page = 1, perPage = 100, storyblokClient }) {
+async function syncStories ({ esClient, index, page = 1, perPage = 100, storyblokClient }) {
   const { data: { stories }, total } = await storyblokClient.get('cdn/stories', {
     page,
     per_page: perPage,
@@ -35,13 +35,13 @@ async function syncStories ({ db, index, page = 1, perPage = 100, storyblokClien
     full_slug: story.full_slug.replace(/^\/|\/$/g, '')
   }))
 
-  const promise = indexStories({ db, index, stories: newStories })
+  const promise = indexStories({ esClient, index, stories: newStories })
 
   const lastPage = Math.ceil((total / perPage))
 
   if (page < lastPage) {
     page += 1
-    return syncStories({ db, index, page, perPage, storyblokClient })
+    return syncStories({ esClient, index, page, perPage, storyblokClient })
   }
 
   return promise
