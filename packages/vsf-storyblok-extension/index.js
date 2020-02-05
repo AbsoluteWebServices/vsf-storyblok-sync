@@ -33,9 +33,9 @@ module.exports = ({ config, db }) => {
 
       const multistoreConfig = Object.assign({}, config, { storyblok: stConfig })
 
-      storeRouter.use(hook({ config: multistoreConfig, db, index, storyblokClient }))
+      storeRouter.use(hook({ config: multistoreConfig, esClient, index, storyblokClient }))
 
-      const getStory = (res, path) => db.search({
+      const getStory = (res, path) => esClient.search({
         index,
         type: 'story',
         body: {
@@ -144,7 +144,7 @@ module.exports = ({ config, db }) => {
   const index = config.storyblok.indexName ? config.storyblok.indexName : 'storyblok_stories'
   const api = Router()
 
-  api.use(hook({ config, db, index, storyblokClient }))
+  api.use(hook({ config, esClient, index, storyblokClient }))
 
   const getStory = (res, path) => esClient.search({
     index,

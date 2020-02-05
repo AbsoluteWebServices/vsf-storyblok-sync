@@ -16,7 +16,7 @@ const transformStory = (index) => ({ id, ...story } = {}) => {
   }
 }
 
-function hook ({ config, db, index, storyblokClient }) {
+function hook ({ config, esClient, index, storyblokClient }) {
   if (!config.storyblok || !config.storyblok.hookSecret) {
     throw new Error('🧱 : config.storyblok.hookSecret not found')
   }
@@ -47,11 +47,11 @@ function hook ({ config, db, index, storyblokClient }) {
         })
         const transformedStory = transformStory(index)(story)
 
-        await db.index(transformedStory)
+        await esClient.index(transformedStory)
         log(`Published ${story.full_slug}`)
       } else if (action === 'unpublished') {
         const transformedStory = transformStory(index)({ id })
-        await db.delete(transformedStory)
+        await esClient.delete(transformedStory)
         log(`Unpublished ${id}`)
       }
 
