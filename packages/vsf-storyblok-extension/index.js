@@ -10,6 +10,7 @@ const log = (string) => {
 }
 
 module.exports = ({ config, db }) => {
+  db = db.getElasticClient()
   if (!config.storyblok || !config.storyblok.previewToken) {
     throw new Error('🧱 : config.storyblok.previewToken not found')
   }
