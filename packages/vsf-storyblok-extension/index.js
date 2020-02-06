@@ -50,7 +50,7 @@ module.exports = ({ config, db }) => {
           }
         }
       }).then((response) => {
-        const { hits } = response
+        const { body: { hits } } = response
         if (hits.total > 0) {
           let story = hits.hits[0]._source
           if (typeof story.content === 'string') {
