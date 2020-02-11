@@ -17,9 +17,14 @@ const transformStory = (index) => ({ id, ...story } = {}) => {
   }
 }
 
-function hook ({ config, esClient, index, storyblokClient }) {
+function hook ({ config, esClient, db, index, storyblokClient }) {
   if (!config.storyblok || !config.storyblok.hookSecret) {
     throw new Error('🧱 : config.storyblok.hookSecret not found')
+  }
+
+  // backward compatibility for old VSF
+  if (!esClient) {
+    esClient = db
   }
 
   async function syncStory (req, res) {
@@ -39,6 +44,7 @@ function hook ({ config, esClient, index, storyblokClient }) {
 
     const cv = Date.now()
     const { story_id: id, action } = req.body
+    const request = require('request')
 
     try {
       if (action === 'published') {
@@ -53,7 +59,6 @@ function hook ({ config, esClient, index, storyblokClient }) {
 
         if (globalPaths.includes(transformedStory.body.full_slug)) {
           log(`Global path found.`)
-          let request = require('request')
 
           const { code, result } = await new Promise((resolve, reject) => {
             request({
@@ -87,7 +92,6 @@ function hook ({ config, esClient, index, storyblokClient }) {
           }
         }
 
-        await db.index(transformedStory)
         log(`Published ${story.full_slug}`)
       } else if (action === 'unpublished') {
         const transformedStory = transformStory(index)({ id })
@@ -97,9 +101,9 @@ function hook ({ config, esClient, index, storyblokClient }) {
 
       if (config.storyblok.cacheTag) {
         request(config.server.invalidateCacheForwardUrl + config.storyblok.cacheTag + '&forwardedFrom=vs', {}, (err, res, body) => {
-          if (err) { console.error(err); }
+          if (err) { console.error(err) }
           try {
-            if (body && JSON.parse(body).code !== 200) console.log(body);
+            if (body && JSON.parse(body).code !== 200) console.log(body)
           } catch (e) {
             console.error('Invalid Cache Invalidation response format', e)
           }
