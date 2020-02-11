@@ -1,5 +1,6 @@
 import { json, Router } from 'express'
 import { apiStatus } from '../../../lib/util'
+import Redis from 'ioredis'
 
 const log = (string) => {
   console.log('📖 : ' + string) // eslint-disable-line no-console
@@ -36,7 +37,7 @@ function hook ({ config, esClient, index, storyblokClient }) {
       }
     }
 
-    const cv = Date.now() // bust cache
+    const cv = Date.now()
     const { story_id: id, action } = req.body
 
     try {
@@ -48,6 +49,45 @@ function hook ({ config, esClient, index, storyblokClient }) {
         const transformedStory = transformStory(index)(story)
 
         await esClient.index(transformedStory)
+        const globalPaths = config.storyblok.globalPaths || []
+
+        if (globalPaths.includes(transformedStory.body.full_slug)) {
+          log(`Global path found.`)
+          let request = require('request')
+
+          const { code, result } = await new Promise((resolve, reject) => {
+            request({
+              url: config.storyblok.cacheVersionAPI,
+              method: 'POST',
+              json: true,
+              body: {}
+            }, (error, response, body) => {
+              if (error) reject(new Error('Cache version request failed.'))
+              else resolve(body)
+            })
+          })
+
+          log(`Cache version ${result}`)
+
+          if (parseInt(code) === 200 && result) {
+            let redis = new Redis(config.redis.options)
+
+            let stream = redis.scanStream({ match: '*' + result + 'data:page*' })
+            let pipeline = redis.pipeline()
+
+            stream.on('data', (resultKeys) => {
+              resultKeys.forEach((el) => {
+                pipeline.del(el)
+              })
+            })
+
+            stream.on('end', () => {
+              pipeline.exec(() => { log(`Cleared redis cache after global story`) })
+            })
+          }
+        }
+
+        await db.index(transformedStory)
         log(`Published ${story.full_slug}`)
       } else if (action === 'unpublished') {
         const transformedStory = transformStory(index)({ id })
